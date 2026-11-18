@@ -7,25 +7,30 @@ on:
 permissions:
   contents: write
 
-env:
-  GODOT_VERSION: "4.3"
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
 
+      # Finds the Milo project whether you uploaded the files, a folder, or the zip itself
       - name: Locate project
         run: |
           ls -la
-          if [ -f project.godot ]; then P=.
-          elif [ -f noomi/project.godot ]; then P=noomi
-          elif [ -f noomi.zip ]; then unzip -q noomi.zip -d work; P=work/noomi
-          else echo "project.godot not found"; find . -maxdepth 3 -not -path './.git/*' | head -50; exit 1
+          if [ -f settings.gradle ] && [ -f app/build.gradle ]; then P=.
+          else
+            Z=$(find . -maxdepth 2 -name '*.zip' -not -path './.git/*' | head -1)
+            if [ -n "$Z" ]; then unzip -q "$Z" -d work; fi
+            F=$(find . -name settings.gradle -not -path './.git/*' | head -1)
+            if [ -z "$F" ]; then
+              echo "settings.gradle not found. Upload the files from the Milo zip to the top of the repository."
+              find . -maxdepth 3 -not -path './.git/*' | head -50
+              exit 1
+            fi
+            P=$(dirname "$F")
           fi
           echo "PROJECT=$P" >> $GITHUB_ENV
-          echo "Using project at $P"; ls -la $P
+          echo "Using project at $P"; ls -la "$P"
 
       - uses: actions/setup-java@v5
         with:
@@ -37,51 +42,29 @@ jobs:
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platform-tools" "build-tools;34.0.0" "platforms;android-34"
 
-      - name: Install Godot and export templates
-        run: |
-          BASE=https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable
-          wget -q $BASE/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip
-          wget -q $BASE/Godot_v${GODOT_VERSION}-stable_export_templates.tpz
-          unzip -q Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip
-          sudo mv Godot_v${GODOT_VERSION}-stable_linux.x86_64 /usr/local/bin/godot
-          mkdir -p ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
-          unzip -q Godot_v${GODOT_VERSION}-stable_export_templates.tpz -d tpl
-          mv tpl/templates/* ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
 
-      - name: Configure Godot for Android
-        run: |
-          keytool -keyalg RSA -genkeypair -alias androiddebugkey -keypass android -keystore "$HOME/debug.keystore" -storepass android -dname "CN=Android Debug,O=Android,C=US" -validity 9999 -deststoretype pkcs12
-          mkdir -p ~/.config/godot
-          S=~/.config/godot/editor_settings-4.3.tres
-          echo '[gd_resource type="EditorSettings" format=3]' > $S
-          echo '' >> $S
-          echo '[resource]' >> $S
-          echo "export/android/android_sdk_path = \"$ANDROID_HOME\"" >> $S
-          echo "export/android/java_sdk_path = \"$JAVA_HOME\"" >> $S
-          echo "export/android/debug_keystore = \"$HOME/debug.keystore\"" >> $S
-          echo 'export/android/debug_keystore_user = "androiddebugkey"' >> $S
-          echo 'export/android/debug_keystore_pass = "android"' >> $S
-          cat $S
-
-      - name: Import project
-        working-directory: ${{ env.PROJECT }}
-        run: godot --headless --path . --import || true
-
-      - name: Export debug APK
+      - name: Build debug APK
         working-directory: ${{ env.PROJECT }}
         run: |
-          mkdir -p build
-          godot --headless --path . --export-debug "Android" build/noomi-debug.apk
-          ls -l build
+          gradle assembleDebug --no-daemon --stacktrace
+          mkdir -p build-out
+          cp app/build/outputs/apk/debug/app-debug.apk build-out/Milo-The-Last-Message.apk
+          ls -l build-out
 
       - uses: actions/upload-artifact@v5
         with:
-          name: noomi-debug-apk
-          path: ${{ env.PROJECT }}/build/noomi-debug.apk
+          name: milo-debug-apk
+          path: ${{ env.PROJECT }}/build-out/Milo-The-Last-Message.apk
 
       - name: Publish APK as a GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete latest-build --cleanup-tag --yes || true
-          gh release create latest-build ${{ env.PROJECT }}/build/noomi-debug.apk --title "Noomi debug build" --notes "Debug APK built from ${{ github.sha }}" --prerelease
+          gh release create latest-build "${{ env.PROJECT }}/build-out/Milo-The-Last-Message.apk" \
+            --title "Milo debug build" \
+            --notes "Debug APK built from ${{ github.sha }}" \
+            --prerelease
