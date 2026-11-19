@@ -1,0 +1,45 @@
+name: Publish web version (GitHub Pages)
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+
+      # Finds the game whether you uploaded the files, a folder, or the zip itself
+      - name: Find the game
+        run: |
+          Z=$(find . -maxdepth 2 -name '*.zip' -not -path './.git/*' | head -1)
+          if [ ! -f app/src/main/assets/index.html ] && [ -n "$Z" ]; then unzip -q "$Z" -d work; fi
+          F=$(find . -path '*app/src/main/assets/index.html' -not -path './.git/*' | head -1)
+          if [ -z "$F" ]; then echo "index.html not found in app/src/main/assets"; exit 1; fi
+          mkdir -p site
+          cp "$F" site/index.html
+          touch site/.nojekyll
+          ls -la site
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
