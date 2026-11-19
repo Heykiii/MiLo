@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Milo's face: cream helmet, black visor, cyan arc eyes, teal ears, one antenna -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:fillColor="#1D1640" android:pathData="M54,0A54,54 0,1 1,54,108A54,54 0,1 1,54,0Z" />
+    <path android:strokeColor="#2A2A2E" android:strokeWidth="2.5" android:strokeLineCap="round" android:pathData="M38,32L28,16" />
+    <path android:fillColor="#35E0F0" android:pathData="M28,12A4,4 0,1 1,28,20A4,4 0,1 1,28,12Z" />
+    <path android:fillColor="#1F8C86" android:pathData="M16,48A7,10 0,1 1,16,68A7,10 0,1 1,16,48Z" />
+    <path android:fillColor="#1F8C86" android:pathData="M92,48A7,10 0,1 1,92,68A7,10 0,1 1,92,48Z" />
+    <path android:fillColor="#EDE3D2" android:pathData="M36,30L72,30A18,18 0,0 1,90,48L90,68A18,18 0,0 1,72,86L36,86A18,18 0,0 1,18,68L18,48A18,18 0,0 1,36,30Z" />
+    <path android:fillColor="#1F8C86" android:pathData="M48,33L60,33L60,35L48,35Z" />
+    <path android:fillColor="#0B0F14" android:pathData="M38,40L70,40A12,12 0,0 1,82,52L82,66A12,12 0,0 1,70,78L38,78A12,12 0,0 1,26,66L26,52A12,12 0,0 1,38,40Z" />
+    <path android:strokeColor="#35E0F0" android:strokeWidth="4.5" android:strokeLineCap="round" android:pathData="M35,63A7,7 0,0 1,49,63" />
+    <path android:strokeColor="#35E0F0" android:strokeWidth="4.5" android:strokeLineCap="round" android:pathData="M59,63A7,7 0,0 1,73,63" />
+</vector>
